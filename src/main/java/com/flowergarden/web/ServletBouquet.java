@@ -3,13 +3,19 @@
  */
 package com.flowergarden.web;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.stream.XMLStreamWriter;
 
+import com.flowergarden.bouquet.Bouquet2;
+import com.flowergarden.flowers.GeneralFlower2;
 import com.flowergarden.services.BouquetService;
 
 /**
@@ -40,12 +46,39 @@ public class ServletBouquet extends HttpServlet{
         	
         }
         
-        String json = bs.getBouquet(Integer.valueOf(id));
+        Bouquet2<GeneralFlower2> bouquet = (Bouquet2<GeneralFlower2>) bs.getBouquet(Integer.valueOf(id));
         
-        if(json == null){
+        if(bouquet == null){
         	
-        	return;
+        	response.getWriter().println("No bouquet found");
         }
+        
+        String json = null;
+
+        Marshaller marshaller = Shared.CONTEXT().getBean(Marshaller.class);
+
+    	XMLStreamWriter xmlStreamWriter = Shared.CONTEXT().getBean(XMLStreamWriter.class);
+
+    	ByteArrayOutputStream byteOutputStream = Shared.CONTEXT().getBean(ByteArrayOutputStream.class);
+        
+        try{
+			
+			marshaller.marshal(bouquet, xmlStreamWriter);
+			
+		}catch(JAXBException je){
+			
+			je.printStackTrace();
+		}
+		
+		try{
+			byteOutputStream.flush();
+		}catch(IOException ioe){
+			
+			ioe.printStackTrace();
+		}
+		
+		 json = byteOutputStream.toString();
+		 byteOutputStream.reset();
         
         response.getWriter().println("<!DOCTYPE html>");
         response.getWriter().println("<html>");
